@@ -1,0 +1,286 @@
+---
+title: "Binds and Joins Demo"
+author: "Tyler Harris"
+date: "10/13/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r}
+# Objectives: 
+# 1. Learn about binds and joins
+# 2. Combine all data into a single table
+# 3. Resolve all issues to eliminate error messages for the final table
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE}
+# Tidyverse allows us to quickly and easily load many useful packages and functions with a single line of code
+
+# You can install packages and load the package by uncommenting the next two lines
+# install.packages("tidyverse")
+# library(tidyverse)
+
+# I like require better because it does the same thing in one line of code rather than two.
+# Load tidyverse
+require(tidyverse)
+```
+
+```{r}
+# Create dataset 1
+price <- c(1, 4, 6, 7, 8)
+item <- c("candy", "socks", "tea", "coffee", "pens")
+retailer <- c("Meijer", "Wal-Mart", "Publix", "Tim Hortons", "Staples")
+
+# Combine vectors into data frame
+df1 <- data.frame(price, item, retailer)
+
+# Print top rows
+head(df1)
+```
+
+```{r}
+# Create dataset 2
+Retailer <- c("Best Buy", "Amazon", "Newegg", "eBay")
+Item <- c("GPS", "SD Card Reader", "RTX 3090", "overpriced RTX 2080ti")
+Price <- c(200, 20, 1499, 1100)
+
+# Combine vectors into data frame
+df2 <- data.frame(Retailer, Item, Price)
+
+# Print top rows
+head(df2)
+```
+
+```{r}
+# Think about what you notice that is different between the df1 and df2 objects before moving on
+```
+
+```{r}
+# Create dataset 3
+items <- c("keyboard", "mouse", "Raspberry Pi 4", "books", "dry erase board", "anti-virus software")
+Manufacturer <- c("Logitech", "Logitech", "Raspberry Pi Foundation", "Penguin Publishing", "Office Max", "Kaspersky Labs")
+price <- c(30, 40, 55, 120, 20, 50)
+cost_of_production <- c(10, 12, 40, 30, 4, 8)
+
+# Combine vectors into data frame
+df3 <- data.frame(cost_of_production, price, items, Manufacturer)
+
+# Print top rows
+head(df3)
+```
+
+```{r}
+# Let's really think about what is different between the three data frames we have created. There are very important differences we need to resolve to get the right results!
+```
+
+```{r}
+# First, let's experiment with cbind and rbind. Often when the data requires merging different datasets together, this is the first thing many people try.
+
+# rbind Documentation https://www.rdocumentation.org/packages/SparkR/versions/2.4.6/topics/rbind
+
+# Try rbind first with just the first two data sets
+rbind_test <- rbind(df1, df2)
+
+# Print top rows
+head(rbind_test)
+
+# This gave us an error! Why? Let's try cbind next to see if that helps us avoid error messages
+```
+
+```{r}
+# cbind Documentation: https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/cbind
+
+# cbind test with just the first two data sets
+cbind_test <- cbind(df1, df2)
+
+# Print top rows
+head(cbind_test)
+
+# Whoa! We got a different error that time? What gives? Why is R so particular about things?
+```
+
+```{r}
+# Well, rbind and cbind do not work, right? They work, so we must be doing something wrong here. Let's see if we can use joins to get our data to cooperate
+
+# Documentation link for joins: https://dplyr.tidyverse.org/reference/join.html
+
+# Let's try different types of joins
+
+# Left Join
+left_join_test <- left_join(df1, df2, by = "Price")
+head(left_join_test)
+# Come on! Another error? Why? Let's try different tables
+```
+
+```{r}
+# Maybe data frames 1 and 3 will go together
+left_join_test_2 <- left_join(df1, df3, by = "price")
+head(left_join_test_2)
+
+# Something happened without an error! But it doesn't look quite right :( Why are there two columns of NA's present?
+```
+
+```{r}
+# Okay, so the left_join has a parameter called "by" where we set that equal to "price". That gave us a result. Not the one we wanted, but a result nonetheless. Our problem surrounding combining these data sets are because of both the column names not being exactly the same for joins and not being the same length for binds. 
+
+# So let's try to get all the column names to be the same. There are a lot of ways to do this, but this one is the simplest for what most people need.
+```
+
+```{r}
+# When renaming the columns, it doesn't really matter which way you go as long as they all end up the same.
+# I am going to change df1's names to be the same as df2. It's definitely possible to go the other way, but I think this looks better.
+# If you are using RStudio, you can click on the object name in the Environment tab or do "view(object)" to see the data
+
+# Change df1's names to match df2
+names(df1)[1] <- "Price" # Column 1 is price, but we want it to be Price like df2
+names(df1)[2] <- "Item" # same as Price
+names(df1)[3] <- "Retailer" # same deal again
+
+# Check the names worked
+head(df1)
+
+# There we go! Now df1 and df2 have the same names but in a different order.
+```
+
+```{r}
+# Let's try rbind again to try to merge df1 and df2. They have the same column names, so this should be great, right?
+
+rbind_test_2 <- rbind(df1, df2)
+
+# Check result
+rbind_test_2
+
+# Look at that! We got our Price, Item, and Retailer columns combined!
+# rbind will "bind" the rows from the second data set to the first. df2 "binds" to df1.
+# Now let's see what happens with adding df3 into the equation
+```
+
+```{r}
+# We know we need to change the column names, but df3 has different parameters. What's going to happen when we try to bind them together?
+
+# Let's change the names we know we need to change
+names(df3)[2] <- "Price"
+names(df3)[3] <- "Item"
+
+# use rbind
+rbind_test_3 <- rbind(rbind_test_2, df3)
+
+# check data
+rbind_test_3
+
+# Oh no! number of columns do not match. How can we resolve this?
+# We could try taking out columns, but the data would not match up. We would only have two out of four columns be the same anyway. That doesn't really get us that far. We'll probably need some kind of join to accomplish this
+```
+
+```{r}
+# Inner Join
+IJtest <- inner_join(rbind_test_2, df3)
+IJtest # 0 observations of 5 variables? Why?
+
+# What if we swap which is the right and which is the left table?
+IJtest2 <- inner_join(df3, rbind_test_2)
+IJtest2 # Still 0 observations of 5 rows
+
+# When we inner join, we are looking for where ALL the rows in the first table have matching values in the second table. Since we do not have all matches, we are not actually joining anything. The only step that is completed is R figuing out we're trying to get 5 columns.
+```
+
+```{r}
+# Left Join
+LJtest <- left_join(rbind_test_2, df3)
+LJtest
+
+# Alright, well we got some of the data. However, the only thing we accomplished is adding the two extra columns to the picture. Left joining is still just looking for matches that aren't there
+```
+
+```{r}
+# Right Join
+RJtest <- right_join(rbind_test_2, df3)
+RJtest
+
+# Right join is interesting because we get the five columns, but only the six rows of df3. This is because we return the rows from the second table (right table) and all rows from the first table (left table) that have matches. The only thing that matches these conditions is just the data in df3. Kind of weird, but that's how it works.
+```
+
+```{r}
+# Full Join
+FJtest <- full_join(rbind_test_2, df3)
+FJtest
+
+# Success! We got the right table. We have 5 columns with 15 rows with all the data. If you want a slightly more appealing looking table, we can switch the tables around in the full_join() function.
+# According to the documentation: full_join will "return all rows and all columns from both x and y. Where there are not matching values, returns NA for the one missing." That is exactly what we did here. The next cell shows what we could have done from the beginning to simplify our efforts.
+```
+
+```{r}
+# We could have done all the name changes at one time. I copy/pasted from above for consistency and simplicity.
+# Change df1's names to match df2
+names(df1)[1] <- "Price" # Column 1 is price, but we want it to be Price like df2
+names(df1)[2] <- "Item" # same as Price
+names(df1)[3] <- "Retailer" # same deal again
+
+# Change df3's names to match df2
+names(df3)[2] <- "Price"
+names(df3)[3] <- "Item"
+
+# rbind df1 and df2
+FJintermediate <- full_join(df1, df2)
+# RBfinal <- rbind(df1, df2) # gives the same result
+
+# Full Join both sets together
+FJfinal <- full_join(df3, FJintermediate)
+# FJfinal2 <- full_join(df3, RBfinal) # gives the same result
+
+# Check final data
+FJfinal
+# FJfinal2 # gives the same result
+
+# Note that there is a way to do the reassignment of column names within full_join(), but it is a little dense and harder to explicitly see what is happening with the code. The documentation shows how to do this. 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
